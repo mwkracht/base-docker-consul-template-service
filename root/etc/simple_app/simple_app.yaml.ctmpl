@@ -1,0 +1,4 @@
+---
+zmq_from_addr: {{ keyOrDefault "simple_app/zmq_from_addr" ""}}
+zmq_to_addr: {{ keyOrDefault "simple_app/zmq_to_addr" "" }}
+zmq_message_suffix: {{ keyOrDefault "simple_app/zmq_message_suffix" "" }}
