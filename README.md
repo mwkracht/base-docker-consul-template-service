@@ -1,0 +1,1 @@
+# base-docker-consul-template-service
