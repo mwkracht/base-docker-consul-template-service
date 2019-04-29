@@ -4,6 +4,8 @@ LABEL maintainer="Matt Kracht" \
       email="mwkracht@gmail.com" \
       description="Example containerized app which generates own configruation using consul-template"
 
+ENV CONSUL_ADDR="127.0.0.1:8500"
+
 ARG CONSUL_TEMPLATE_VERSION=0.20.0
 ADD https://releases.hashicorp.com/consul-template/${CONSUL_TEMPLATE_VERSION}/consul-template_${CONSUL_TEMPLATE_VERSION}_linux_amd64.zip /
 

@@ -31,7 +31,7 @@ def load_yaml_file(yaml_file_path):
     """
     try:
         with open(yaml_file_path) as yaml_fd:
-            return yaml.load(yaml_fd, Loader=yaml.SafeLoader)
+            return yaml.load(yaml_fd, Loader=yaml.SafeLoader) or {}
     except FileNotFoundError:
         return {}
     except yaml.YAMLError as yaml_error:
@@ -51,15 +51,15 @@ def zmq_forwarder(zmq_rx_addr, zmq_tx_addr, zmq_message_suffix):
     """Forward messages received on rx socket to tx socket indefinitely."""
     context = zmq.Context()
 
-    rx_socket = context.socket(zmq.REP)
+    rx_socket = context.socket(zmq.PULL)
     rx_socket.connect(zmq_rx_addr)
 
-    tx_socket = context.socket(zmq.REQ)
+    tx_socket = context.socket(zmq.PUSH)
     tx_socket.connect(zmq_tx_addr)
 
     while True:
-        message = rx_socket.recv()
-        tx_socket.send('{0}{1}'.format(message, zmq_message_suffix))
+        message = rx_socket.recv_string()
+        tx_socket.send_string(message + zmq_message_suffix)
 
 
 def main():

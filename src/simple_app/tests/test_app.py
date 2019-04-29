@@ -26,6 +26,15 @@ def test_load_yaml_file_valid_yaml_file(tmpdir):
     }
 
 
+def test_load_yaml_file_empty_yaml_file(tmpdir):
+    """Verify method returns empty dictionary if yaml file is empty."""
+    yaml_file = tmpdir.join('test.yaml')
+    yaml_file.write('---\n')
+
+    yaml_content = simple_app.load_yaml_file(yaml_file)
+    assert yaml_content == {}
+
+
 def test_load_yaml_file_invalid_yaml_file(tmpdir):
     """Verify method raises exception when file contents cannot be parsed."""
     yaml_file = tmpdir.join('test.yaml')

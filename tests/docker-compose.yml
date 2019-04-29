@@ -1,0 +1,27 @@
+version: '2'
+
+services:
+  simple_app_harness:
+    container_name: simple_app_harness
+    build:
+      context: .
+      dockerfile: Dockerfile
+    environment:
+      - CONSUL_HOST=consul
+    # Arbitrary sleep thrown in to wait for consul to stabilize
+    command: 'py.test -s -v /tests'
+
+  simple_app_cut:
+    container_name: simple_app_cut
+    build:
+      context: ..
+      dockerfile: Dockerfile
+    environment:
+      - CONSUL_ADDR=consul:8500
+      - ZMQ_RX_ADDR=tcp://simple_app_harness:8888
+      - ZMQ_TX_ADDR=tcp://simple_app_harness:9999
+
+  consul:
+    container_name: consul
+    image: consul:latest
+    command: agent -server -ui -bind 0.0.0.0 -client 0.0.0.0 -bootstrap-expect=1
