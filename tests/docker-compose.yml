@@ -8,7 +8,8 @@ services:
       dockerfile: Dockerfile
     environment:
       - CONSUL_HOST=consul
-    # Arbitrary sleep thrown in to wait for consul to stabilize
+    volumes:
+      - etc_simple_app:/etc/simple_app
     command: 'py.test -s -v /tests'
 
   simple_app_cut:
@@ -20,8 +21,13 @@ services:
       - CONSUL_ADDR=consul:8500
       - ZMQ_RX_ADDR=tcp://simple_app_harness:8888
       - ZMQ_TX_ADDR=tcp://simple_app_harness:9999
+    volumes:
+      - etc_simple_app:/etc/simple_app
 
   consul:
     container_name: consul
     image: consul:latest
     command: agent -server -ui -bind 0.0.0.0 -client 0.0.0.0 -bootstrap-expect=1
+
+volumes:
+  etc_simple_app:

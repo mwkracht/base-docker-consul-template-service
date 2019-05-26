@@ -1,5 +1,6 @@
 """Module contains interface class for modifying and interacting with simple_app service during testing."""
 import os
+import time
 
 import consul
 import zmq
@@ -19,6 +20,8 @@ class SimpleApp(object):
 
     DEFAULT_ZMQ_INPUT_ADDR = 'tcp://0.0.0.0:8888'
     DEFAULT_ZMQ_OUTPUT_ADDR = 'tcp://0.0.0.0:9999'
+
+    CONFIG_FILE_PATH = '/etc/simple_app/simple_app.yaml'
 
     def __init__(self,
                  host=CONSUL_HOST,
@@ -46,6 +49,27 @@ class SimpleApp(object):
             except consul.ConsulException:
                 pass
 
+    @staticmethod
+    def wait_for_template_update(template_dest=CONFIG_FILE_PATH, timeout=15):
+        """
+        Watch consul template dest file and return when updated.
+
+        Timeout provided in seconds.
+        """
+        step_seconds = 0.1
+        elapsed_sec = 0
+        last_modified = os.path.getmtime(template_dest) if os.path.exists(template_dest) else 0
+
+        while elapsed_sec < timeout:
+            if os.path.exists(template_dest) and os.path.getmtime(template_dest) > last_modified:
+                time.sleep(1)  # allow for watcher to also restart service after updating template
+                break
+
+            time.sleep(step_seconds)
+            elapsed_sec += step_seconds
+        else:
+            raise TimeoutError('Template file {0} never updated within {1} seconds'.format(template_dest, timeout))
+
     def __enter__(self):
         """Perform any setup required before entering each test."""
         self.zmq_context = zmq.Context()
@@ -61,7 +85,11 @@ class SimpleApp(object):
         self.zmq_output_socket.close()
         self.zmq_context.term()
 
-        self.consul.kv.delete(self.consul_prefix, recurse=True)
+        # If configuration changes were made in consul, clear them and wait for service config
+        # file to be restored to original state.
+        if self.consul.kv.get(self.consul_prefix, recurse=True)[1]:
+            self.consul.kv.delete(self.consul_prefix, recurse=True)
+            self.wait_for_template_update()
 
     def consul_set(self, key, value):
         """Set key-value pair in simple app partition of consul KV store."""
